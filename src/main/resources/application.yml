@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: billing-exchange-system
+  cache:
+    type: redis
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 60000
+cache:
+  exchange_rate_ttl: 3600
+
+
+discounts:
+  employee: 30
+  affiliate: 10
+  long_term_customer: 5
+  per_hundred_discount: 5
+  exclude_categories:
+    - groceries
+
+exchange-rate:
+  base-url: https://v6.exchangerate-api.com/v6
+  api-key: 5d34caa6708dab82f5c65af7
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      exchangeRateService:
+        register-health-indicator: true
+        sliding-window-size: 5
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+
+  retry:
+    instances:
+      exchangeRateService:
+        max-attempts: 3
+        wait-duration: 2s
+
+
