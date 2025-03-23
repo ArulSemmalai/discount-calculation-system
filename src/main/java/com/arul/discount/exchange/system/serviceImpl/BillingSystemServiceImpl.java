@@ -5,7 +5,6 @@ import com.arul.discount.exchange.system.exception.ExchangeRateException;
 import com.arul.discount.exchange.system.exception.InvalidBillDetailsException;
 import com.arul.discount.exchange.system.model.BillDetails;
 import com.arul.discount.exchange.system.model.BillResponse;
-import com.arul.billing.exchange.system.service.*;
 import com.arul.discount.exchange.system.service.*;
 import com.arul.discount.exchange.system.utils.UserType;
 import lombok.extern.slf4j.Slf4j;
