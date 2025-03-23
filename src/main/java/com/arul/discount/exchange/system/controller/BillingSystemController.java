@@ -1,6 +1,6 @@
 package com.arul.discount.exchange.system.controller;
 
-import com.arul.discount.exchange.system.model.BillDetails;
+import com.arul.discount.exchange.system.model.BillDetailsRequest;
 import com.arul.discount.exchange.system.service.BillingSystemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +18,8 @@ public class BillingSystemController {
     }
 
     @PostMapping("/calculate")
-    public ResponseEntity<?> calculateBilling(@RequestBody BillDetails billDetails) throws Exception {
-       return ResponseEntity.ok(billingSystemService.calculateAndApplyDiscount(billDetails).toString());
+    public ResponseEntity<?> calculateBilling(@RequestBody BillDetailsRequest billDetailsRequest) throws Exception {
+       return ResponseEntity.ok(billingSystemService.calculateAndApplyDiscount(billDetailsRequest).toString());
     }
     @GetMapping("/test")
     public String testAPi(){

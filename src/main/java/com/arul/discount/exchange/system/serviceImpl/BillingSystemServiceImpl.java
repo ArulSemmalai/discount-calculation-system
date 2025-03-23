@@ -3,8 +3,8 @@ package com.arul.discount.exchange.system.serviceImpl;
 import com.arul.discount.exchange.system.config.DiscountConfig;
 import com.arul.discount.exchange.system.exception.ExchangeRateException;
 import com.arul.discount.exchange.system.exception.InvalidBillDetailsException;
-import com.arul.discount.exchange.system.model.BillDetails;
-import com.arul.discount.exchange.system.model.BillResponse;
+import com.arul.discount.exchange.system.model.BillDetailsRequest;
+import com.arul.discount.exchange.system.model.BillDetailsResponse;
 import com.arul.discount.exchange.system.service.*;
 import com.arul.discount.exchange.system.utils.UserType;
 import lombok.extern.slf4j.Slf4j;
@@ -35,24 +35,24 @@ public class BillingSystemServiceImpl implements BillingSystemService {
 
 
     @Override
-    public BillResponse calculateAndApplyDiscount(BillDetails billDetails) throws Exception {
+    public BillDetailsResponse calculateAndApplyDiscount(BillDetailsRequest billDetailsRequest) throws Exception {
         log.info("Entered Calculate Billing method in service class");
 
-        if (billDetails == null) {
+        if (billDetailsRequest == null) {
             throw new InvalidBillDetailsException("Bill details cannot be null");
         }
 
-        BigDecimal nonGroceryAmount = calculateNonGroceryAmount(billDetails);
-        BigDecimal groceryAmount = billDetails.getBillAmount().subtract(nonGroceryAmount);
+        BigDecimal nonGroceryAmount = calculateNonGroceryAmount(billDetailsRequest);
+        BigDecimal groceryAmount = billDetailsRequest.getBillAmount().subtract(nonGroceryAmount);
 
-        log.info("Total amount: {}", billDetails.getBillAmount());
+        log.info("Total amount: {}", billDetailsRequest.getBillAmount());
         log.info("Total calculated amount excluding groceries: {}", nonGroceryAmount);
         log.info("Total calculated amount for groceries: {}", groceryAmount);
 
         try {
-            UserType userType = UserType.fromString(billDetails.getUserType());
+            UserType userType = UserType.fromString(billDetailsRequest.getUserType());
 
-            DiscountStrategy applicableDiscount = getApplicableDiscountStrategy(userType, billDetails.getCustomerTenure());
+            DiscountStrategy applicableDiscount = getApplicableDiscountStrategy(userType, billDetailsRequest.getCustomerTenure());
             if (applicableDiscount != null) {
                 log.info("Applying discount strategy for user type: {}", userType);
                 nonGroceryAmount = applicableDiscount.applyDiscount(nonGroceryAmount);
@@ -62,13 +62,13 @@ public class BillingSystemServiceImpl implements BillingSystemService {
             BigDecimal finalBillAmount = perHundredDiscount.applyDiscount(nonGroceryAmount.add(groceryAmount));
             log.info("Final amount after per-hundred discount on Grocery + Non-Grocery: {}", finalBillAmount);
 
-            BigDecimal targetCurrencyRate = exchangeRateServiceImpl.getExchangeRate(billDetails.getOriginalCurrency(), billDetails.getTargetCurrency());
-            log.info("Target Currency: {} Rate: {}", billDetails.getTargetCurrency(), targetCurrencyRate);
+            BigDecimal targetCurrencyRate = exchangeRateServiceImpl.getExchangeRate(billDetailsRequest.getOriginalCurrency(), billDetailsRequest.getTargetCurrency());
+            log.info("Target Currency: {} Rate: {}", billDetailsRequest.getTargetCurrency(), targetCurrencyRate);
 
             BigDecimal finalPayableAmount = finalBillAmount.multiply(targetCurrencyRate);
 
             log.info("Final Payment amount converting to target currency rate : {}", finalPayableAmount);
-            return new BillResponse(finalPayableAmount.setScale(2, RoundingMode.HALF_DOWN), billDetails.getTargetCurrency());
+            return new BillDetailsResponse(finalPayableAmount.setScale(2, RoundingMode.HALF_DOWN), billDetailsRequest.getTargetCurrency());
 
         } catch (ExchangeRateException ex) {
             log.error("Exchange API error: {}", ex.getMessage(), ex);
@@ -92,10 +92,10 @@ public class BillingSystemServiceImpl implements BillingSystemService {
     /**
      * Calculates the total non-grocery amount from the bill.
      */
-    private BigDecimal calculateNonGroceryAmount(BillDetails billDetails) {
-        return billDetails.getItems().stream()
+    private BigDecimal calculateNonGroceryAmount(BillDetailsRequest billDetailsRequest) {
+        return billDetailsRequest.getItems().stream()
                 .filter(item -> !"groceries".equalsIgnoreCase(item.getCategory()))
-                .map(BillDetails.Item::getPrice)
+                .map(BillDetailsRequest.Item::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

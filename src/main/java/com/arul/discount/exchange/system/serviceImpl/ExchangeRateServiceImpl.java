@@ -6,6 +6,8 @@ import com.arul.discount.exchange.system.model.ExchangeRateResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,9 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -25,7 +30,6 @@ public class ExchangeRateServiceImpl {
 
     public ExchangeRateServiceImpl(WebClient.Builder webClientBuilder, ExchangeRateProperties exchangeRateProperties) {
         this.exchangeRateProperties = exchangeRateProperties;
-
         String baseUrl = String.format("%s/%s/latest",
                 exchangeRateProperties.getBaseUrl(),
                 exchangeRateProperties.getApiKey());
@@ -37,7 +41,7 @@ public class ExchangeRateServiceImpl {
 
     @CircuitBreaker(name = "exchangeRateService", fallbackMethod = "getDefaultExchangeRate")
     @Retry(name = "exchangeRateService")
-    @Cacheable(value = "exchangeRates", key = "#baseCurrency + #targetCurrency")
+    @Cacheable(value = "exchangeRates", key = "#baseCurrency +'-'+#targetCurrency")
     public BigDecimal getExchangeRate(String baseCurrency, String targetCurrency) {
         log.info("Fetching exchange rate from '{}' to '{}'", baseCurrency, targetCurrency);
 

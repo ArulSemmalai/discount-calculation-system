@@ -1,8 +1,8 @@
 package com.arul.discount.exchange.system.service;
 
-import com.arul.discount.exchange.system.model.BillDetails;
-import com.arul.discount.exchange.system.model.BillResponse;
+import com.arul.discount.exchange.system.model.BillDetailsRequest;
+import com.arul.discount.exchange.system.model.BillDetailsResponse;
 
 public interface BillingSystemService {
-    public BillResponse calculateAndApplyDiscount(BillDetails billDetails) throws Exception;
+    public BillDetailsResponse calculateAndApplyDiscount(BillDetailsRequest billDetailsRequest) throws Exception;
 }

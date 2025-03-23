@@ -41,6 +41,7 @@ public class ExchangeRateServiceImplTest {
 
     ExchangeRateServiceImpl exchangeRateService;
 
+
     @BeforeEach
     void setUp() {
 

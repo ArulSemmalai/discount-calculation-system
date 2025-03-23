@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Getter
 @AllArgsConstructor
-public class BillResponse implements Serializable {
+public class BillDetailsResponse implements Serializable {
 
     private BigDecimal totalAmount;
     private String currency;

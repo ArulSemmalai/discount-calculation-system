@@ -3,8 +3,8 @@ package com.arul.discount.exchange.system;
 import com.arul.discount.exchange.system.config.DiscountConfig;
 import com.arul.discount.exchange.system.exception.ExchangeRateException;
 import com.arul.discount.exchange.system.exception.InvalidBillDetailsException;
-import com.arul.discount.exchange.system.model.BillDetails;
-import com.arul.discount.exchange.system.model.BillResponse;
+import com.arul.discount.exchange.system.model.BillDetailsRequest;
+import com.arul.discount.exchange.system.model.BillDetailsResponse;
 import com.arul.discount.exchange.system.serviceImpl.BillingSystemServiceImpl;
 import com.arul.discount.exchange.system.serviceImpl.ExchangeRateServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,7 @@ public class BillingSystemServiceImplTest {
 
     private BillingSystemServiceImpl billingSystemService;
 
-    private BillDetails billDetails;
+    private BillDetailsRequest billDetailsRequest;
 
     @BeforeEach
     void setUp() {
@@ -44,23 +44,23 @@ public class BillingSystemServiceImplTest {
 
         billingSystemService = new BillingSystemServiceImpl(discountConfig, exchangeRateServiceImpl);
 
-        billDetails = new BillDetails();
-        billDetails.setCustomerTenure(3);
-        billDetails.setOriginalCurrency("USD");
-        billDetails.setTargetCurrency("AED");
-        billDetails.setBillAmount(new BigDecimal("500"));
+        billDetailsRequest = new BillDetailsRequest();
+        billDetailsRequest.setCustomerTenure(3);
+        billDetailsRequest.setOriginalCurrency("USD");
+        billDetailsRequest.setTargetCurrency("AED");
+        billDetailsRequest.setBillAmount(new BigDecimal("500"));
 
-        billDetails.setItems(List.of(
-                new BillDetails.Item("electronics", new BigDecimal("200")),
-                new BillDetails.Item("groceries", new BigDecimal("300"))
+        billDetailsRequest.setItems(List.of(
+                new BillDetailsRequest.Item("electronics", new BigDecimal("200")),
+                new BillDetailsRequest.Item("groceries", new BigDecimal("300"))
         ));
     }
 
 
     @Test
     void testApplyEmployeeDiscountAndConvertCurrency() throws Exception {
-        billDetails.setUserType("EMPLOYEE");
-        BillResponse response = billingSystemService.calculateAndApplyDiscount(billDetails);
+        billDetailsRequest.setUserType("EMPLOYEE");
+        BillDetailsResponse response = billingSystemService.calculateAndApplyDiscount(billDetailsRequest);
 
         assertNotNull(response);
         assertEquals("AED", response.getCurrency());
@@ -69,8 +69,8 @@ public class BillingSystemServiceImplTest {
     }
     @Test
     void testApplyAffiliateDiscountAndConvertCurrency() throws Exception {
-        billDetails.setUserType("AFFILIATE");
-        BillResponse response = billingSystemService.calculateAndApplyDiscount(billDetails);
+        billDetailsRequest.setUserType("AFFILIATE");
+        BillDetailsResponse response = billingSystemService.calculateAndApplyDiscount(billDetailsRequest);
         assertNotNull(response);
         assertEquals("AED", response.getCurrency());
         assertTrue(response.getTotalAmount().compareTo(BigDecimal.ZERO) > 0);
@@ -79,20 +79,20 @@ public class BillingSystemServiceImplTest {
 
     @Test
     void testThrowExceptionForInvalidCurrencyConversion() {
-        billDetails.setUserType("AFFILIATE");
+        billDetailsRequest.setUserType("AFFILIATE");
         when(exchangeRateServiceImpl.getExchangeRate("USD", "AED"))
                 .thenThrow(new ExchangeRateException("Failed to fetch exchange rate"));
 
-        assertThrows(ExchangeRateException.class, () -> billingSystemService.calculateAndApplyDiscount(billDetails));
+        assertThrows(ExchangeRateException.class, () -> billingSystemService.calculateAndApplyDiscount(billDetailsRequest));
         verify(exchangeRateServiceImpl, times(1)).getExchangeRate("USD", "AED");
     }
 
     @Test
     void testApplyCustomerTenureDiscount() throws Exception {
-        billDetails.setUserType("CUSTOMER");
-        billDetails.setCustomerTenure(3);
+        billDetailsRequest.setUserType("CUSTOMER");
+        billDetailsRequest.setCustomerTenure(3);
 
-        BillResponse response = billingSystemService.calculateAndApplyDiscount(billDetails);
+        BillDetailsResponse response = billingSystemService.calculateAndApplyDiscount(billDetailsRequest);
 
         assertNotNull(response);
         assertTrue(response.getTotalAmount().compareTo(BigDecimal.ZERO) > 0);
@@ -107,9 +107,9 @@ public class BillingSystemServiceImplTest {
     void testCalculateAndApplyDiscount_WithApplicableDiscount() throws Exception {
 
         when(exchangeRateServiceImpl.getExchangeRate("USD", "INR")).thenReturn(BigDecimal.valueOf(75));
-        billDetails.setUserType("EMPLOYEE");
-        billDetails.setTargetCurrency("INR");
-        BillResponse response = billingSystemService.calculateAndApplyDiscount(billDetails);
+        billDetailsRequest.setUserType("EMPLOYEE");
+        billDetailsRequest.setTargetCurrency("INR");
+        BillDetailsResponse response = billingSystemService.calculateAndApplyDiscount(billDetailsRequest);
         assertNotNull(response);
         assertEquals("INR", response.getCurrency());
         verify(exchangeRateServiceImpl, times(1)).getExchangeRate("USD", "INR");
@@ -117,9 +117,9 @@ public class BillingSystemServiceImplTest {
     @Test
     void testCalculateAndApplyDiscount_GeneralException() throws Exception {
         when(exchangeRateServiceImpl.getExchangeRate(anyString(), anyString())).thenThrow(new RuntimeException("Unexpected error"));
-        billDetails.setUserType("EMPLOYEE");
+        billDetailsRequest.setUserType("EMPLOYEE");
         Exception exception = assertThrows(Exception.class, () -> {
-            billingSystemService.calculateAndApplyDiscount(billDetails);
+            billingSystemService.calculateAndApplyDiscount(billDetailsRequest);
         });
         assertTrue(exception.getMessage().contains("Error in calculating billing. Please try again later:"));
     }
